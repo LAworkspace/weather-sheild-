@@ -1,5 +1,7 @@
 {
+  "_format": "hh-sol-artifact-1",
   "contractName": "WeatherInsurance",
+  "sourceName": "contracts/WeatherInsurance.sol",
   "abi": [
     {
       "inputs": [
@@ -11,6 +13,47 @@
       ],
       "stateMutability": "nonpayable",
       "type": "constructor"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnableInvalidOwner",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "OwnableUnauthorizedAccount",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
     },
     {
       "anonymous": false,
@@ -48,31 +91,57 @@
         },
         {
           "indexed": false,
-          "internalType": "uint256",
+          "internalType": "int256",
           "name": "minTemp",
-          "type": "uint256"
+          "type": "int256"
         },
         {
           "indexed": false,
-          "internalType": "uint256",
+          "internalType": "int256",
           "name": "maxTemp",
-          "type": "uint256"
+          "type": "int256"
         }
       ],
       "name": "PolicyPurchased",
       "type": "event"
     },
     {
+      "inputs": [],
+      "name": "COVERAGE_MULTIPLIER",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "PREMIUM_PERCENTAGE",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
-          "internalType": "uint256",
+          "internalType": "int256",
           "name": "_minTemp",
-          "type": "uint256"
+          "type": "int256"
         },
         {
-          "internalType": "uint256",
+          "internalType": "int256",
           "name": "_maxTemp",
-          "type": "uint256"
+          "type": "int256"
         }
       ],
       "name": "buyPolicy",
@@ -89,7 +158,103 @@
     },
     {
       "inputs": [],
-      "name": "insurer",
+      "name": "getContractBalance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_address",
+          "type": "address"
+        }
+      ],
+      "name": "getPolicy",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "policyHolder",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "premiumPaid",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "insuredAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "int256",
+              "name": "minTemperature",
+              "type": "int256"
+            },
+            {
+              "internalType": "int256",
+              "name": "maxTemperature",
+              "type": "int256"
+            },
+            {
+              "internalType": "bool",
+              "name": "isActive",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct WeatherInsurance.Policy",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_address",
+          "type": "address"
+        }
+      ],
+      "name": "hasActivePolicy",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "oracle",
+      "outputs": [
+        {
+          "internalType": "contract WeatherOracle",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
       "outputs": [
         {
           "internalType": "address",
@@ -126,14 +291,14 @@
           "type": "uint256"
         },
         {
-          "internalType": "uint256",
+          "internalType": "int256",
           "name": "minTemperature",
-          "type": "uint256"
+          "type": "int256"
         },
         {
-          "internalType": "uint256",
+          "internalType": "int256",
           "name": "maxTemperature",
-          "type": "uint256"
+          "type": "int256"
         },
         {
           "internalType": "bool",
@@ -143,6 +308,56 @@
       ],
       "stateMutability": "view",
       "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_newOracleAddress",
+          "type": "address"
+        }
+      ],
+      "name": "updateOracle",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdraw",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
     }
-  ]
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
 }

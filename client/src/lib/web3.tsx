@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ethers } from 'ethers';
-import { useToast } from '@/hooks/use-toast';
+import { formatEth } from './utils';
 
+// Define Web3 context
 interface Web3ContextType {
   provider: ethers.BrowserProvider | null;
   signer: ethers.JsonRpcSigner | null;
@@ -14,6 +15,7 @@ interface Web3ContextType {
   disconnect: () => void;
 }
 
+// Create context with default values
 const Web3Context = createContext<Web3ContextType>({
   provider: null,
   signer: null,
@@ -26,12 +28,22 @@ const Web3Context = createContext<Web3ContextType>({
   disconnect: () => {},
 });
 
+// Export context hook
 export const useWeb3 = () => useContext(Web3Context);
 
+// Extend Window interface to include ethereum
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
+
+// Web3 Provider Props
 interface Web3ProviderProps {
   children: ReactNode;
 }
 
+// Web3 Provider Component
 export const Web3Provider = ({ children }: Web3ProviderProps) => {
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
   const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
@@ -40,98 +52,52 @@ export const Web3Provider = ({ children }: Web3ProviderProps) => {
   const [balance, setBalance] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const { toast } = useToast();
 
-  // Initialize Ethereum provider from window.ethereum
-  const initProvider = () => {
-    if (typeof window !== 'undefined' && window.ethereum) {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      setProvider(provider);
-      return provider;
-    }
-    return null;
-  };
-
-  // Update account information
-  const updateAccount = async (newAccount: string, newProvider: ethers.BrowserProvider) => {
-    setAccount(newAccount);
-    
-    try {
-      const signer = await newProvider.getSigner();
-      setSigner(signer);
-      
-      const network = await newProvider.getNetwork();
-      setChainId(Number(network.chainId));
-      
-      const balance = await newProvider.getBalance(newAccount);
-      setBalance(ethers.formatEther(balance));
-      
-      setIsConnected(true);
-    } catch (error) {
-      console.error('Error updating account:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to get account details',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  // Connect wallet
+  // Connect to Web3 provider
   const connect = async () => {
-    if (isConnecting) return;
-    
+    if (!window.ethereum) {
+      alert('Please install MetaMask or another Web3 provider');
+      return;
+    }
+
     try {
       setIsConnecting(true);
-      
-      if (!window.ethereum) {
-        toast({
-          title: 'MetaMask Not Found',
-          description: 'Please install MetaMask to use this application',
-          variant: 'destructive',
-        });
-        return;
+
+      // Request account access
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+      // Create provider
+      const ethersProvider = new ethers.BrowserProvider(window.ethereum);
+      setProvider(ethersProvider);
+
+      // Get network
+      const network = await ethersProvider.getNetwork();
+      setChainId(Number(network.chainId));
+
+      // Get accounts
+      const accounts = await ethersProvider.listAccounts();
+      if (accounts.length > 0) {
+        const userAccount = accounts[0].address;
+        setAccount(userAccount);
+
+        // Get signer
+        const signerInstance = await ethersProvider.getSigner();
+        setSigner(signerInstance);
+
+        // Get balance
+        const userBalance = await ethersProvider.getBalance(userAccount);
+        setBalance(formatEth(userBalance));
+
+        setIsConnected(true);
       }
-      
-      const currentProvider = provider || initProvider();
-      if (!currentProvider) {
-        toast({
-          title: 'Provider Error',
-          description: 'Failed to initialize Ethereum provider',
-          variant: 'destructive',
-        });
-        return;
-      }
-      
-      const accounts = await currentProvider.send('eth_requestAccounts', []);
-      if (accounts.length === 0) {
-        toast({
-          title: 'Connection Failed',
-          description: 'No accounts found or user rejected the connection',
-          variant: 'destructive',
-        });
-        return;
-      }
-      
-      await updateAccount(accounts[0], currentProvider);
-      
-      toast({
-        title: 'Wallet Connected',
-        description: 'Successfully connected to your wallet',
-      });
     } catch (error) {
-      console.error('Error connecting to wallet:', error);
-      toast({
-        title: 'Connection Failed',
-        description: error instanceof Error ? error.message : 'Failed to connect to wallet',
-        variant: 'destructive',
-      });
+      console.error('Error connecting to Web3:', error);
     } finally {
       setIsConnecting(false);
     }
   };
 
-  // Disconnect wallet
+  // Disconnect from Web3 provider
   const disconnect = () => {
     setProvider(null);
     setSigner(null);
@@ -139,92 +105,95 @@ export const Web3Provider = ({ children }: Web3ProviderProps) => {
     setChainId(null);
     setBalance(null);
     setIsConnected(false);
-    
-    toast({
-      title: 'Wallet Disconnected',
-      description: 'Your wallet has been disconnected',
-    });
   };
 
-  // Listen for account changes
+  // Handle account and chain changes
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.ethereum) return;
-    
     const handleAccountsChanged = async (accounts: string[]) => {
       if (accounts.length === 0) {
         // User disconnected their wallet
         disconnect();
-      } else if (account !== accounts[0] && provider) {
-        // Account changed
-        await updateAccount(accounts[0], provider);
+      } else if (accounts[0] !== account) {
+        // Account changed, update state
+        setAccount(accounts[0]);
+
+        if (provider) {
+          // Update signer
+          const signerInstance = await provider.getSigner();
+          setSigner(signerInstance);
+
+          // Update balance
+          const userBalance = await provider.getBalance(accounts[0]);
+          setBalance(formatEth(userBalance));
+        }
       }
     };
-    
-    const handleChainChanged = () => {
-      // Reload the page when chain changes
+
+    const handleChainChanged = (chainIdHex: string) => {
+      // Chain changed, refresh page as recommended by MetaMask
       window.location.reload();
     };
-    
-    const handleDisconnect = () => {
-      disconnect();
-    };
-    
-    window.ethereum.on('accountsChanged', handleAccountsChanged);
-    window.ethereum.on('chainChanged', handleChainChanged);
-    window.ethereum.on('disconnect', handleDisconnect);
-    
-    // Check if already connected
-    const checkConnection = async () => {
-      try {
-        const newProvider = initProvider();
-        if (newProvider) {
-          const accounts = await newProvider.listAccounts();
-          if (accounts.length > 0) {
-            await updateAccount(accounts[0].address, newProvider);
-          }
-        }
-      } catch (error) {
-        console.error('Error checking connection:', error);
-      }
-    };
-    
-    checkConnection();
-    
+
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', handleAccountsChanged);
+      window.ethereum.on('chainChanged', handleChainChanged);
+    }
+
+    // Cleanup listeners on unmount
     return () => {
       if (window.ethereum) {
         window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
         window.ethereum.removeListener('chainChanged', handleChainChanged);
-        window.ethereum.removeListener('disconnect', handleDisconnect);
       }
     };
-  }, [account, provider]);
+  }, [provider, account]);
 
-  return (
-    <Web3Context.Provider value={{
-      provider,
-      signer,
-      account,
-      chainId,
-      balance,
-      isConnecting,
-      isConnected,
-      connect,
-      disconnect,
-    }}>
-      {children}
-    </Web3Context.Provider>
-  );
+  // Check if already connected on load
+  useEffect(() => {
+    const checkConnection = async () => {
+      if (window.ethereum) {
+        try {
+          // Check if already connected
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          if (accounts.length > 0) {
+            // User is already connected, initialize
+            await connect();
+          }
+        } catch (error) {
+          console.error('Error checking connection:', error);
+        }
+      }
+    };
+
+    checkConnection();
+  }, []);
+
+  // Context value
+  const value: Web3ContextType = {
+    provider,
+    signer,
+    account,
+    chainId,
+    balance,
+    isConnecting,
+    isConnected,
+    connect,
+    disconnect,
+  };
+
+  return <Web3Context.Provider value={value}>{children}</Web3Context.Provider>;
 };
 
-// Helper functions
+// Utility function to shorten Ethereum address
 export const shortenAddress = (address: string | null): string => {
   if (!address) return '';
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 };
 
+// Utility function to get network name from chain ID
 export const getNetworkName = (chainId: number | null): string => {
-  if (!chainId) return '';
-  
+  if (!chainId) return 'Not Connected';
+
   switch (chainId) {
     case 1:
       return 'Ethereum Mainnet';
@@ -232,14 +201,9 @@ export const getNetworkName = (chainId: number | null): string => {
       return 'Goerli Testnet';
     case 11155111:
       return 'Sepolia Testnet';
+    case 31337:
+      return 'Local Hardhat Node';
     default:
-      return 'Unknown Network';
+      return `Unknown Network (${chainId})`;
   }
 };
-
-// Add MetaMask type to window
-declare global {
-  interface Window {
-    ethereum?: any;
-  }
-}

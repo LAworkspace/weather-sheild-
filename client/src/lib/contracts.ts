@@ -1,8 +1,8 @@
 import { ethers } from 'ethers';
 import WeatherInsuranceABI from './WeatherInsurance.json';
 
-// Contract address - update this with your deployed contract address
-const WEATHER_INSURANCE_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3'; // Default Hardhat first deployment address
+// Contract address - will be updated after deployment
+const CONTRACT_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3'; // Default local hardhat deployment address
 
 export interface Policy {
   policyHolder: string;
@@ -13,104 +13,126 @@ export interface Policy {
   isActive: boolean;
 }
 
+/**
+ * Class to interact with the WeatherInsurance smart contract
+ */
 export class WeatherInsuranceContract {
   private contract: ethers.Contract | null = null;
   private signer: ethers.JsonRpcSigner | null = null;
 
+  /**
+   * Constructor
+   * @param signerOrProvider Signer or provider to connect to the contract
+   */
   constructor(signerOrProvider: ethers.JsonRpcSigner | ethers.Provider) {
-    try {
-      // Check if it's a signer by looking for the getAddress method
-      if ('getAddress' in signerOrProvider) {
-        this.signer = signerOrProvider as ethers.JsonRpcSigner;
-        this.contract = new ethers.Contract(
-          WEATHER_INSURANCE_ADDRESS,
-          WeatherInsuranceABI.abi,
-          this.signer
-        );
-      } else {
-        this.contract = new ethers.Contract(
-          WEATHER_INSURANCE_ADDRESS,
-          WeatherInsuranceABI.abi,
-          signerOrProvider
-        );
-      }
-    } catch (error) {
-      console.error('Error initializing weather insurance contract:', error);
+    if (signerOrProvider instanceof ethers.JsonRpcSigner) {
+      this.signer = signerOrProvider;
+      this.contract = new ethers.Contract(
+        CONTRACT_ADDRESS,
+        WeatherInsuranceABI.abi,
+        this.signer
+      );
+    } else {
+      this.contract = new ethers.Contract(
+        CONTRACT_ADDRESS,
+        WeatherInsuranceABI.abi,
+        signerOrProvider
+      );
     }
   }
 
-  // Connect with a new signer
+  /**
+   * Connect with a signer to enable write operations
+   * @param signer JsonRpcSigner to connect with
+   */
   connect(signer: ethers.JsonRpcSigner) {
     this.signer = signer;
     if (this.contract) {
       this.contract = this.contract.connect(signer);
+    } else {
+      this.contract = new ethers.Contract(
+        CONTRACT_ADDRESS,
+        WeatherInsuranceABI.abi,
+        signer
+      );
     }
-    return this;
   }
 
-  // Check if the contract is initialized
+  /**
+   * Check if the contract is initialized
+   * @returns True if the contract is initialized
+   */
   isInitialized(): boolean {
-    return !!this.contract;
+    return this.contract !== null;
   }
 
-  // Buy a policy
+  /**
+   * Buy a new insurance policy
+   * @param minTemp Minimum temperature for policy activation (in tenths of a degree)
+   * @param maxTemp Maximum temperature for policy activation (in tenths of a degree)
+   * @param premiumAmount Premium amount in ETH
+   * @returns Transaction response
+   */
   async buyPolicy(minTemp: number, maxTemp: number, premiumAmount: string): Promise<ethers.ContractTransactionResponse> {
-    if (!this.contract) throw new Error('Contract not initialized');
-    
-    // Convert temperatures to integers (Solidity doesn't handle decimals)
-    const minTempInt = Math.floor(minTemp * 10); // Store with 1 decimal precision
-    const maxTempInt = Math.floor(maxTemp * 10);
-    
-    // Convert ETH to Wei
+    if (!this.contract || !this.signer) {
+      throw new Error('Contract or signer not initialized');
+    }
+
+    // Convert temperatures to blockchain format (tenths of degree)
+    const minTempInt = Math.round(minTemp * 10);
+    const maxTempInt = Math.round(maxTemp * 10);
+
+    // Convert premium amount to wei
     const premium = ethers.parseEther(premiumAmount);
-    
-    // Call the contract function
-    return await this.contract.buyPolicy(minTempInt, maxTempInt, {
-      value: premium
-    });
+
+    // Buy policy
+    return await this.contract.buyPolicy(minTempInt, maxTempInt, { value: premium });
   }
 
-  // Check weather and process payout
+  /**
+   * Check weather conditions and process payout if conditions are met
+   * @returns Transaction response
+   */
   async checkWeatherAndProcessPayout(): Promise<ethers.ContractTransactionResponse> {
-    if (!this.contract) throw new Error('Contract not initialized');
+    if (!this.contract || !this.signer) {
+      throw new Error('Contract or signer not initialized');
+    }
+
     return await this.contract.checkWeatherAndProcessPayout();
   }
 
-  // Get policy details for an address
+  /**
+   * Get policy details for a given address
+   * @param address Address to get policy for
+   * @returns Policy details
+   */
   async getPolicy(address: string): Promise<Policy> {
-    if (!this.contract) throw new Error('Contract not initialized');
-    const policy = await this.contract.policies(address);
-    return {
-      policyHolder: policy.policyHolder,
-      premiumPaid: policy.premiumPaid,
-      insuredAmount: policy.insuredAmount,
-      minTemperature: policy.minTemperature,
-      maxTemperature: policy.maxTemperature,
-      isActive: policy.isActive
-    };
-  }
-  
-  // Get user's current policy
-  async getUserPolicy(): Promise<Policy | null> {
-    if (!this.contract || !this.signer) throw new Error('Contract or signer not initialized');
-    
-    try {
-      const address = await this.signer.getAddress();
-      const policy = await this.getPolicy(address);
-      
-      // Check if policy is valid (policy holder should match the address)
-      if (policy.policyHolder === ethers.ZeroAddress) {
-        return null;
-      }
-      return policy;
-    } catch (error) {
-      console.error('Error getting user policy:', error);
-      return null;
+    if (!this.contract) {
+      throw new Error('Contract not initialized');
     }
+
+    return await this.contract.getPolicy(address);
+  }
+
+  /**
+   * Get policy details for the current user
+   * @returns Policy details or null if no signer is available
+   */
+  async getUserPolicy(): Promise<Policy | null> {
+    if (!this.contract || !this.signer) {
+      throw new Error('Contract or signer not initialized');
+    }
+
+    const address = await this.signer.getAddress();
+    return await this.getPolicy(address);
   }
 }
 
-// Helper function to create a contract instance
+/**
+ * Get a WeatherInsurance contract instance
+ * @param signerOrProvider Signer or provider to connect with
+ * @returns WeatherInsurance contract instance
+ */
 export function getWeatherInsuranceContract(signerOrProvider: ethers.JsonRpcSigner | ethers.Provider): WeatherInsuranceContract {
   return new WeatherInsuranceContract(signerOrProvider);
 }
