@@ -71,21 +71,23 @@ export default function ActivePolicies() {
         throw new Error('Wallet not connected');
       }
       
-      // Simulate blockchain transaction for claim payout
-      // In a real implementation, this would call a smart contract function
       try {
-        // Create transaction to simulate contract call
-        const tx = await signer.sendTransaction({
-          to: ethers.ZeroAddress, // This would be the contract address
-          value: ethers.parseEther("0"), // Just a call, no value
-        });
+        // Import the contract interface
+        const { getWeatherInsuranceContract } = await import('@/lib/contracts');
+        
+        // Create contract instance with signer
+        const weatherContract = getWeatherInsuranceContract(signer);
+        
+        // Call the smart contract function to check weather and process payout
+        const tx = await weatherContract.checkWeatherAndProcessPayout();
         
         // Wait for transaction to be mined
-        await tx.wait();
+        const receipt = await tx.wait();
         
         // Update policy status via API
         const response = await apiRequest('POST', `/api/claim-payout/${policy.id}`, {
           txHash: tx.hash,
+          receipt: JSON.stringify(receipt),
         });
         
         return response.json();

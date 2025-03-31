@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { useWeb3 } from '@/lib/web3';
 import { useToast } from '@/hooks/use-toast';
 import { ethers } from 'ethers';
+import { getWeatherInsuranceContract } from '@/lib/contracts';
 
 // Form schema for policy creation
 const policyFormSchema = z.object({
@@ -89,27 +90,49 @@ export default function PolicyForm() {
         throw new Error('Wallet not connected');
       }
       
-      // Send ETH from user's wallet to simulate contract interaction
-      // In a real implementation, this would be a call to an actual smart contract
       try {
-        // Convert premium to wei
-        const premiumWei = ethers.parseEther(premium.toString());
+        // Create contract instance with signer
+        const weatherContract = getWeatherInsuranceContract(signer);
         
-        // Simulate transaction - in a real app this would be a contract call
-        const tx = await signer.sendTransaction({
-          to: ethers.ZeroAddress, // This would be the contract address in production
-          value: premiumWei,
-        });
+        // Set min and max temperatures based on weather event type
+        const threshold = formData.threshold;
+        let minTemp: number = 0;
+        let maxTemp: number = 1000;
+        
+        if (eventType === 'rainfall') {
+          // For rainfall, set the min temperature to threshold (trigger if rainfall exceeds threshold)
+          minTemp = 0;
+          maxTemp = threshold;
+        } else if (eventType === 'drought') {
+          // For drought, set min threshold to be the drought days count
+          minTemp = threshold;
+          maxTemp = 1000; // High value that won't be exceeded
+        } else if (eventType === 'heatwave') {
+          // For heatwave, set max temperature to threshold (trigger if temp exceeds threshold)
+          minTemp = 0;
+          maxTemp = threshold;
+        } else if (eventType === 'storm') {
+          // For storms, trigger if wind speed exceeds threshold
+          minTemp = 0;
+          maxTemp = threshold;
+        }
+        
+        // Buy policy through the smart contract
+        const tx = await weatherContract.buyPolicy(
+          minTemp, 
+          maxTemp, 
+          premium.toString()
+        );
         
         // Wait for transaction to be mined
-        await tx.wait();
+        const receipt = await tx.wait();
         
         // Calculate policy dates
         const startDate = new Date();
         const endDate = new Date();
         endDate.setDate(endDate.getDate() + formData.duration);
         
-        // Create policy record in backend
+        // Create policy record in backend for UI display
         const policyData = {
           walletAddress: account,
           location: formData.location,
