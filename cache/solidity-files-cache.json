@@ -1,0 +1,193 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/Users/lakshmianand/Desktop/WeatherShield/contracts/WeatherInsurance.sol": {
+      "lastModificationDate": 1743403955904,
+      "contentHash": "b00ef9c881008d63b012baff84ca8464",
+      "sourceName": "contracts/WeatherInsurance.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "./WeatherOracle.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "WeatherInsurance"
+      ]
+    },
+    "/Users/lakshmianand/Desktop/WeatherShield/contracts/WeatherOracle.sol": {
+      "lastModificationDate": 1743403058926,
+      "contentHash": "53e3aaa25a88d9f80e6e1e42418a691c",
+      "sourceName": "contracts/WeatherOracle.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "WeatherOracle"
+      ]
+    },
+    "/Users/lakshmianand/Desktop/WeatherShield/node_modules/@openzeppelin/contracts/access/Ownable.sol": {
+      "lastModificationDate": 1743403151543,
+      "contentHash": "d3c790edc9ccf808a17c5a6cd13614fd",
+      "sourceName": "@openzeppelin/contracts/access/Ownable.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../utils/Context.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Ownable"
+      ]
+    },
+    "/Users/lakshmianand/Desktop/WeatherShield/node_modules/@openzeppelin/contracts/utils/ReentrancyGuard.sol": {
+      "lastModificationDate": 1743403151558,
+      "contentHash": "190613e556d509d9e9a0ea43dc5d891d",
+      "sourceName": "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "ReentrancyGuard"
+      ]
+    },
+    "/Users/lakshmianand/Desktop/WeatherShield/node_modules/@openzeppelin/contracts/utils/Context.sol": {
+      "lastModificationDate": 1743403151311,
+      "contentHash": "67bfbc07588eb8683b3fd8f6f909563e",
+      "sourceName": "@openzeppelin/contracts/utils/Context.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Context"
+      ]
+    }
+  }
+}

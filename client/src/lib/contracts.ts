@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 import WeatherInsuranceABI from './WeatherInsurance.json';
 
 // Contract address - will be updated after deployment
-const CONTRACT_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3'; // Default local hardhat deployment address
+const CONTRACT_ADDRESS = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512'; // Default local hardhat deployment address
 
 export interface Policy {
   policyHolder: string;
@@ -17,7 +17,7 @@ export interface Policy {
  * Class to interact with the WeatherInsurance smart contract
  */
 export class WeatherInsuranceContract {
-  private contract: ethers.Contract | null = null;
+  private contract: ethers.Contract & { [key: string]: any } | null = null;
   private signer: ethers.JsonRpcSigner | null = null;
 
   /**
@@ -48,7 +48,7 @@ export class WeatherInsuranceContract {
   connect(signer: ethers.JsonRpcSigner) {
     this.signer = signer;
     if (this.contract) {
-      this.contract = this.contract.connect(signer);
+      this.contract = this.contract.connect(signer) as ethers.Contract & { [key: string]: any };
     } else {
       this.contract = new ethers.Contract(
         CONTRACT_ADDRESS,
